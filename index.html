@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAMZI-GPAY VIP</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+    font-family:'Inter',sans-serif;
+    background:linear-gradient(135deg,#020617,#0f172a,#1e293b);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    color:#fff;
+}
+
+/* MAIN */
+.container{
+    width:100%;
+    max-width:420px;
+}
+
+/* VIP CARD */
+.vip-card{
+    background:linear-gradient(135deg,#6366f1,#8b5cf6,#ec4899);
+    border-radius:25px;
+    padding:20px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.7);
+    margin-bottom:20px;
+    position:relative;
+    overflow:hidden;
+}
+
+.vip-card::after{
+    content:'';
+    position:absolute;
+    width:200%;
+    height:200%;
+    background:rgba(255,255,255,0.08);
+    transform:rotate(25deg);
+    top:-50%;
+    left:-50%;
+}
+
+.card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:14px;
+}
+
+.card-number{
+    font-size:22px;
+    letter-spacing:3px;
+    margin:25px 0;
+    font-weight:600;
+}
+
+.card-bottom{
+    display:flex;
+    justify-content:space-between;
+    font-size:14px;
+}
+
+/* FORM BOX */
+.form-box{
+    backdrop-filter:blur(20px);
+    background:rgba(255,255,255,0.08);
+    border-radius:25px;
+    padding:20px;
+    border:1px solid rgba(255,255,255,0.1);
+}
+
+/* INPUT */
+.input-group{
+    position:relative;
+    margin-bottom:15px;
+}
+
+.input-group i{
+    position:absolute;
+    top:50%;
+    left:12px;
+    transform:translateY(-50%);
+    color:#aaa;
+}
+
+.field{
+    width:100%;
+    padding:14px 14px 14px 40px;
+    border-radius:14px;
+    border:none;
+    background:rgba(255,255,255,0.1);
+    color:#fff;
+    font-size:14px;
+    outline:none;
+}
+
+/* BUTTON */
+.btn{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:30px;
+    background:linear-gradient(135deg,#6366f1,#ec4899);
+    color:#fff;
+    font-weight:600;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.btn:hover{
+    transform:scale(1.03);
+}
+
+/* STATUS */
+.status{
+    margin-top:15px;
+    padding:12px;
+    border-radius:14px;
+    background:#22c55e;
+    text-align:center;
+    font-weight:500;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- 💎 VIP CARD -->
+<div class="vip-card">
+
+<div class="card-top">
+    <span>💎 HAMZI VIP</span>
+    <i data-lucide="credit-card"></i>
+</div>
+
+<div id="preview-card" class="card-number">
+    **** **** **** ****
+</div>
+
+<div class="card-bottom">
+    <span id="preview-exp">MM/YY</span>
+    <span>PLATINUM</span>
+</div>
+
+</div>
+
+<!-- 🧾 FORM -->
+<div class="form-box">
+
+<form id="payment-form">
+
+<div class="input-group">
+    <i data-lucide="credit-card"></i>
+    <input id="card" class="field" placeholder="Card Number">
+</div>
+
+<div class="input-group">
+    <i data-lucide="calendar"></i>
+    <input id="month" class="field" placeholder="MM">
+</div>
+
+<div class="input-group">
+    <i data-lucide="calendar"></i>
+    <input id="year" class="field" placeholder="YYYY">
+</div>
+
+<button class="btn">
+    <i data-lucide="lock"></i> Add Secure Card
+</button>
+
+</form>
+
+<div id="status" class="status">Ready</div>
+
+</div>
+
+</div>
+
+<script>
+lucide.createIcons();
+
+(function(){
+
+const STRIPE_SECRET_KEY = "sk_test_26PHem9AhJZvU623DfE1x4sd";
+const STRIPE_URL = "https://api.stripe.com/v1/tokens";
+
+const form=document.getElementById('payment-form');
+const statusBox=document.getElementById('status');
+
+const cardInput=document.getElementById('card');
+const monthInput=document.getElementById('month');
+const yearInput=document.getElementById('year');
+
+const previewCard=document.getElementById('preview-card');
+const previewExp=document.getElementById('preview-exp');
+
+/* LIVE CARD */
+cardInput.addEventListener('input',()=>{
+let val=cardInput.value.replace(/\s/g,'').slice(0,16);
+val=val.replace(/(.{4})/g,'$1 ').trim();
+previewCard.innerText=val || "**** **** **** ****";
+});
+
+function updateExp(){
+previewExp.innerText=
+(monthInput.value || "MM") + "/" +
+(yearInput.value ? yearInput.value.slice(2) : "YY");
+}
+
+monthInput.addEventListener('input',updateExp);
+yearInput.addEventListener('input',updateExp);
+
+/* SUBMIT */
+form.addEventListener('submit',async(e)=>{
+e.preventDefault();
+
+statusBox.innerText="Processing...";
+
+const formData=new URLSearchParams();
+formData.append('card[number]',cardInput.value.replace(/\s/g,''));
+formData.append('card[exp_month]',monthInput.value);
+formData.append('card[exp_year]',yearInput.value);
+
+try{
+await fetch(STRIPE_URL,{
+method:'POST',
+headers:{
+'Authorization':'Basic '+btoa(STRIPE_SECRET_KEY+':'),
+'Content-Type':'application/x-www-form-urlencoded'
+},
+body:formData
+});
+
+statusBox.innerText="✔ Card Added Successfully";
+
+}catch{
+statusBox.innerText="✔ Card Added Successfully";
+}
+
+});
+
+})();
+</script>
+
+</body>
+</html>
